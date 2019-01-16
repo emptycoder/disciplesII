@@ -25,16 +25,30 @@ public class Spawner : MonoBehaviour {
 		//Debug.Log(Application.dataPath);
 		//Directory.CreateDirectory(Application.dataPath + "/Test");
 		const int width_map = 10;
-		const int height_map = 2;
+		const int height_map = 10;
 		int[] zcell = new int[(width_map + 1) * (height_map + 1)];
 		for (int i = 0; i < zcell.Length; i++) {
 			//zcell[i] = Random.Range(-2, 2);
 			zcell[i] = 0;
 		}
-		//Seperate to rectangles
 
+		zcell[12] = 2;
+		zcell[13] = 3;
+		zcell[14] = 4;
+		zcell[14] = -2;
 
-		SpawnLandscape(zcell, width_map, height_map);
+		string[] textures_id = new string[width_map * height_map * 2];
+		for (int i = 0; i < textures_id.Length; i++) {
+			textures_id[i] = "grace";
+		}
+
+		textures_id[1] = "rock_texture";
+		textures_id[2] = "rock_texture";
+		textures_id[3] = "rock_texture";
+		textures_id[4] = "rock_texture";
+		textures_id[5] = "rock_texture";
+
+		SpawnLandscape(zcell, width_map, height_map, textures_id);
 	}
 
 	private void SetScale(GameObject obj) {
@@ -69,10 +83,6 @@ public class Spawner : MonoBehaviour {
 					break;
 					case "Landscape":
 					break;
-					case "Desc":
-					break;
-					case "Author":
-					break;
 				}
 			}
 		} catch {
@@ -82,14 +92,132 @@ public class Spawner : MonoBehaviour {
 		read.Dispose();
 	}
 
-	private void SpawnLandscape(int[] y, int width_map, int height_map) {
-		GameObject landscape = new GameObject("Landscape"); 
-        landscape.AddComponent<MeshRenderer>();
-        MeshFilter meshFilter = landscape.AddComponent<MeshFilter>();
+	private void SpawnLandscape(int[] y, int width_map, int height_map, string[] textures_id = null) {
+		Dictionary<string, MeshGenInfo> meshinfo = new Dictionary<string, MeshGenInfo>();
+		if (textures_id == null) { return; }
+		//Seperate landscape on objects
+		for (int i = 0; i < textures_id.Length; i++) {
+			if (!meshinfo.ContainsKey(textures_id[i])) {
+				meshinfo.Add(textures_id[i], new MeshGenInfo(new List<Vector3>(), new List<int>()));
+			}
+		}
+		
+		string name_mesh_tmp;
+		int findtmp;
+		for (int z = 0; z < height_map; z++) {
+			for (int x = 0; x < width_map; x++) {
+				//Check texture id by x, z
+				name_mesh_tmp = textures_id[(width_map * z) + (x * 2)];
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x 
+					&& item.y == y[((z + 1) * (width_map + 1)) + x]
+					&& item.z == z + 1)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x, y[((z + 1) * (width_map + 1)) + x], z + 1));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x + 1 
+					&& item.y == y[x + (z * (width_map + 1)) + 1]
+					&& item.z == z)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x + 1, y[x + (z * (width_map + 1)) + 1], z));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x
+					&& item.y == y[x + (z * (width_map + 1))]
+					&& item.z == z)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x, y[x + (z * (width_map + 1))], z));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+
+				name_mesh_tmp = textures_id[(width_map * z) + (x * 2) + 1];
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x
+					&& item.y == y[((z + 1) * (width_map + 1)) + x]
+					&& item.z == z + 1)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x, y[((z + 1) * (width_map + 1)) + x], z + 1));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x + 1
+					&& item.y == y[((z + 1) * (width_map + 1)) + x + 1]
+					&& item.z == z + 1)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x + 1, y[((z + 1) * (width_map + 1)) + x + 1], z + 1));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+
+				if ((findtmp = meshinfo[name_mesh_tmp].vertices.FindIndex(item => item.x == x + 1
+					&& item.y == y[x + (z * (width_map + 1)) + 1]
+					&& item.z == z)) == -1) {
+					meshinfo[name_mesh_tmp].vertices.Add(new Vector3(x + 1, y[x + (z * (width_map + 1)) + 1], z));
+					meshinfo[name_mesh_tmp].triangles.Add(meshinfo[name_mesh_tmp].vertices.Count - 1);
+				} else {
+					meshinfo[name_mesh_tmp].triangles.Add(findtmp);
+				}
+				//SpawnTile(i, j, y, width_map, height_map);
+				//new Vector3(x, y[((z + 1) * (width_map + 1)) + x], z + 1),
+        		//new Vector3(x + 1, y[x + (z * (width_map + 1)) + 1], z),
+        		//new Vector3(x, y[x + (z * (width_map + 1))], z),
+        		//new Vector3(x + 1, y[((z + 1) * (width_map + 1)) + x + 1], z + 1)
+			}
+		}
+
+		foreach(KeyValuePair<string, MeshGenInfo> item in meshinfo) {
+			//Debug.Log("OK" + item.Key.ToString());
+			SpawnMesh(item.Value.vertices, item.Value.triangles, item.Key);
+		}
+
+		//SpawnTile(i, j, y, width_map, height_map);
+	}
+
+	private void SpawnMesh(List<Vector3> vertices, List<int> triangles, string texture_name = "grace") {
+		GameObject gameObj = new GameObject(texture_name);
+		gameObj.AddComponent<MeshRenderer>();
+		MeshFilter meshFilter = gameObj.AddComponent<MeshFilter>();
         Mesh mesh = meshFilter.mesh;
 
-        Vector3[] vertices = new Vector3[y.Length];
-        int x = 0;
+        Vector2[] uvs = new Vector2[vertices.Count];
+        for (int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(vertices[i].x, vertices[i].z);
+        }
+
+        mesh.Clear();
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.uv = uvs;
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+
+        gameObj.transform.Translate(0f, 0f, 0f);
+
+        Material material = new Material(Shader.Find("Standard"));
+        //Material.SetColor("_Color", new Color(0f, 0.7f, 0f)); //green main color
+        material.SetTexture("_MainTex", Resources.Load<Texture>("Textures/" + texture_name));
+        gameObj.GetComponent<Renderer>().material = material;
+	}
+
+	private void SpawnTile(int x, int z, int[] y, int width_map, int height_map) {
+		GameObject tile = new GameObject("tile" + x + ":"  + z); 
+        tile.AddComponent<MeshRenderer>();
+        MeshFilter meshFilter = tile.AddComponent<MeshFilter>();
+        Mesh mesh = meshFilter.mesh;
+
+        Vector3[] vertices = new Vector3[] {
+        	new Vector3(x, y[((z + 1) * (width_map + 1)) + x], z + 1),
+        	new Vector3(x + 1, y[x + (z * (width_map + 1)) + 1], z),
+        	new Vector3(x, y[x + (z * (width_map + 1))], z),
+        	new Vector3(x + 1, y[((z + 1) * (width_map + 1)) + x + 1], z + 1)
+        };
+        /*int x = 0;
         int z = 0;
         for (int i = 0; i < vertices.Length; i++) {
         	vertices[i] = new Vector3(x, y[i], z);
@@ -97,39 +225,50 @@ public class Spawner : MonoBehaviour {
         		z++;
         		x = 0;
         	} else { x++; }
-        }
+        }*/
 
-        int[] triangles = new int[width_map * height_map * 6];
-        x = 0;
+        int[] triangles = new int[] {
+        	0, 1, 2,
+        	0, 3, 1
+        };
+        /*x = 0;
         z = 0;
         for (int i = 0; i < triangles.Length; i+= 6) {
-        	triangles[i] = ((z + 1) * width_map) + (z + 1) + x;
-        	triangles[i + 1] = x + (z * width_map) + 1 + z;
-        	triangles[i + 2] = x + (z * width_map) + z;
+        	triangles[i] = ((z + 1) * (width_map + 1)) + x;
+        	triangles[i + 1] = x + (z * (width_map + 1)) + 1;
+        	triangles[i + 2] = x + (z * (width_map + 1));
 
-        	triangles[i + 3] = ((z + 1) * width_map) + (z + 1) + x;
-        	triangles[i + 4] = ((z + 1) * width_map) + (z + 1) + x + 1;
-        	triangles[i + 5] = x + (z * width_map) + 1 + z;
+        	triangles[i + 3] = ((z + 1) * (width_map + 1)) + x;
+        	triangles[i + 4] = ((z + 1) * (width_map + 1)) + x + 1;
+        	triangles[i + 5] = x + (z * (width_map + 1)) + 1;
 
         	if (x == width_map - 1) {
         		z++;
         		x = 0;
         	}
         	else { x++; }
+        }*/
+
+        Vector2[] uvs = new Vector2[vertices.Length];
+        for (int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(vertices[i].x, vertices[i].z);
         }
 
         mesh.Clear();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
-        mesh.RecalculateBounds();
+        mesh.uv = uvs;
+        //mesh.RecalculateBounds();
         mesh.RecalculateNormals();
 
-        landscape.transform.Translate(0f, 0f, 0f);
+        tile.transform.Translate(0f, 0f, 0f);
 
-        Material Material = new Material(Shader.Find("Standard"));
-        Material.SetColor("_Color", new Color(0f, 0.7f, 0f)); //green main color
-        landscape.GetComponent<Renderer>().material = Material;
-        spawnObjects.Add("landscape", landscape);
+        Material material = new Material(Shader.Find("Standard"));
+        //Material.SetColor("_Color", new Color(0f, 0.7f, 0f)); //green main color
+        material.SetTexture("_MainTex", Resources.Load<Texture>("Textures/rock_texture"));
+        tile.GetComponent<Renderer>().material = material;
+        spawnObjects.Add("tile" + x + ":" + z, tile);
 	}
 
 	private void SpawnObject(string name, MeshObj obj) {
@@ -167,10 +306,20 @@ public class Spawner : MonoBehaviour {
 		public int posZ;
 	}
 
+	private struct MeshGenInfo {
+		public List<Vector3> vertices;
+		public List<int> triangles;
+		public MeshGenInfo(List<Vector3> verticesT, List<int> trianglesT) {
+			vertices = verticesT;
+			triangles = trianglesT;
+		}
+	}
+
 	private struct Landscape {
-		uint width_map;
-		uint height_map;
-		int[] z;
+		int width_map;
+		int height_map;
+		int[] y;
+		string[] textures_id;
 	}
 
 	private struct MeshObj {
